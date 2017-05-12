@@ -72,35 +72,38 @@ void first_pass() {
   //in order to use name and num_frames
   //they must be extern variables
   extern int num_frames;
-  extern char name[128]; 
+  extern char name[128];
+  num_frames = -1;
   int nameset;
   nameset = 0;
+  int i;
   
   for (i=0;i<lastop;i++) {
     printf("%d: ",i);
     switch (op[i].opcode)
       {
       case FRAMES:
-	if(num_frames == NULL){
-	  num_frames = op[i].op.frames.num_frames
+	if(num_frames == -1){
+	  num_frames = op[i].op.frames.num_frames;
 	}
 	else{
 	  printf("ERROR, FRAMES ALREADY SET");
 	}
 	break;
       case BASENAME:
-	strcpy(name, op.[i].op.basename.p);
+	strcpy(name, op[i].op.basename.p->name);
 	nameset = 1;
 	break;
       case VARY:
-	if(num_frames == NULL){
+	if(num_frames == -1){
 	  printf("ERROR, FRAMES NOT SET. QUITTING PROGRAM");
 	  exit(0);
 	}
+	break;
       }
   }
-  if(num_frames != NULL && !nameset){
-    name = "default";
+  if(num_frames != -1 && !nameset){
+    strcpy(name, "default");
     printf("No basename set, setting to \"default\"");
   }
   printf("PASS 1 SUCCESFUL");
@@ -129,6 +132,38 @@ void first_pass() {
   jdyrlandweaver
   ====================*/
 struct vary_node ** second_pass() {
+  extern int num_frames;
+  struct vary_node ** knobs;
+  knobs = (struct vary_node **)malloc(num_frames * sizeof(struct vary_node *));
+  struct vary_node * tmp;
+  tmp = (struct vary_node *)malloc(sizeof(struct vary_node));
+  int i, j, num_nodes;
+  num_nodes = 0;
+  double val;
+  val = 0;
+  double start, end, min, max = 0;
+  
+  for (i=0;i<lastop;i++) {
+    switch (op[i].opcode)
+      {
+      case VARY:
+	for(j=0;j<num_frames;j++){
+	  strcpy(knobs[j]->name, op[i].op.vary.p->name);
+	  if(op[lastop].op.vary.start_frame >= j){
+	    start = op[lastop].op.vary.start_frame;
+	    end = op[lastop].op.vary.end_frame;
+	    min = op[lastop].op.vary.start_val;
+	    max = op[lastop].op.vary.end_val;
+	    knobs[j]->value = ((max - min) / (end - start)) * (j - op[lastop].op.vary.start_frame);
+	  }
+	}
+	
+
+	break;
+      }
+  }
+  
+
   return NULL;
 }
 
